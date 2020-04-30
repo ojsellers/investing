@@ -9,12 +9,13 @@ class data_base_connection():
     '''object represents connection to sql data_base that mirrors the pandas
     data_frame object for input ticker to create table, need to update
     user and password for use with different sql servers'''
-    def __init__(self, ticker):
+    def __init__(self, ticker, start_date):
         self.engine = create_engine('mysql://root:daytraders@localhost')
         self.engine.execute('CREATE DATABASE IF NOT EXISTS stocks;')
         self.engine = create_engine('mysql://root:daytraders@localhost/stocks')
         self.ticker = (ticker[:3] + (ticker[3:] and ''))
         self.ticker_for_df = ticker
+        self.start_date = start_date
 
     '''Fn to check if a table for the ticker exists and, if not, create one '''
     def create_table(self):
@@ -44,11 +45,11 @@ class data_base_connection():
         data.returns()
         return data.df
 
-    '''Fn called if no sql table for ticker previously exists, downloads data
-    for last 2ys'''
+    '''Fn called if no sql table for ticker previously exists, downloads data'''
     def new_table(self):
         try:
-            self.download_df(False).to_sql(self.ticker, con=self.engine)
+            self.download_df(self.start_date).to_sql(self.ticker,
+                                                                con=self.engine)
         except:
             return False
         else:
