@@ -6,80 +6,93 @@ from sqlalchemy import create_engine
 from data import *
 
 class data_base_connection():
-    '''object represents connection to sql data_base that mirrors the pandas
-    data_frame object for input ticker to create table, need to update
-    user and password for use with different sql servers'''
-    def __init__(self, ticker, start_date):
+    def __init__(self, database_name):
+        '''This class represents a connection to the mysql database
+        param database_name: the name of database to create or connect to'''
         self.engine = create_engine('mysql://root:daytraders@localhost')
-        self.engine.execute('CREATE DATABASE IF NOT EXISTS stocks;')
-        self.engine = create_engine('mysql://root:daytraders@localhost/stocks')
-        self.ticker = (ticker[:3] + (ticker[3:] and ''))
-        self.ticker_for_df = ticker
-        self.start_date = start_date
+        self.engine.execute(("""CREATE DATABASE IF NOT EXISTS {0};
+                                                    """).format(database_name))
+        self.engine = create_engine(("""mysql://root:daytraders@localhost/{0}
+                                                    """).format(database_name))
 
-    '''Fn to check if a table for the ticker exists and, if not, create one '''
-    def create_table(self):
+    def create_table(self, ticker, start_date):
+        '''Fn to create new table for a particular DataFrame
+        param ticker: is the stock code
+        param start_date: date from which data is to be collected, can be None
+        return: True or False depending on successful operation'''
         try:
             self.engine.execute(("""SELECT 1 FROM {0}
-                                                LIMIT 1""").format(self.ticker))
+                                                LIMIT 1""").format(ticker))
         except:
-            if self.new_table():
+            if self.new_table(ticker, start_date):
                 print('New table created')
                 return True
             else:
                 print('Unable to create table')
                 return False
         else:
-            if self.update_table():
+            if self.update_table(ticker):
                 print("Table updated")
                 return True
             else:
                 print('Unable to update table')
                 return False
 
-    '''Fn to download data_frame from specified start_date'''
-    def download_df(self, start_date):
-        data = data_frame(self.ticker_for_df, start_date, pd.DataFrame())
+    def download_df(self, ticker, start_date):
+        '''Fn to download dataframe with instance of data_frame class
+        param ticker: is stock code
+        param start_date: is date to download data from to present, can be None
+        return: cleaned stock price dataframe with returns column'''
+        data = data_frame(ticker, start_date, pd.DataFrame())
         data.download_data()
         data.clean_data()
         data.returns()
         return data.df
 
-    '''Fn called if no sql table for ticker previously exists, downloads data'''
-    def new_table(self):
+    def new_table(self, ticker, start_date):
+        '''Fn called if no table exists to create new, params same as previous
+        return: True or False depending on successful operation'''
         try:
-            self.download_df(self.start_date).to_sql(self.ticker,
-                                                                con=self.engine)
+            self.download_df(ticker, start_date).to_sql(ticker, con=self.engine)
         except:
             return False
         else:
             return True
 
-    '''Fn called if sql table for ticker exists, updates data to current date'''
-    def update_table(self):
+    def update_table(self, ticker):
+        '''Fn called if sql table exists to update to present date
+        param ticker: is stock code
+        return: True or False depending on successful operation'''
         try:
-            current = self.read_data()
+            current = self.read_data(ticker)
             if current.index.max() == date.today():
                 return True
-            update = data_frame(self.ticker_for_df, False, pd.concat([current,
-                                self.download_df(current.index.max() +
-                                timedelta(days=1))]))
+            update = data_frame(ticker, False, pd.concat([current,
+                            self.download_df(ticker, current.index.max() +
+                                                        timedelta(days=1))]))
             update.returns()
             self.remove_table()
-            update.df.to_sql(self.ticker, con=self.engine)
+            update.df.to_sql(ticker, con=self.engine)
         except:
             return False
         else:
             return True
 
-    '''Fn to remove sql table for ticker'''
-    def remove_table(self):
+    def remove_table(self, ticker):
+        '''Fn removes table from sql database specified by class variable
+        param ticker: stock code
+        return: True or False depending on successful operation'''
         try:
-            self.engine.execute(("DROP TABLE {0}").format(self.ticker))
+            self.engine.execute(("DROP TABLE {0}").format(ticker))
         except:
             print("Table doesn't exist")
+            return False
         else:
             print("Table removed")
+            return True
 
-    def read_data(self):
-        return pd.read_sql_table(self.ticker, con=self.engine, index_col='Date')
+    def read_data(self, ticker):
+        '''Fn to make copy of database table as a pandas DataFrame
+        param ticker: stock code
+        return: pandas dataframe of market price data'''
+        return pd.read_sql_table(ticker, con=self.engine, index_col='Date')
