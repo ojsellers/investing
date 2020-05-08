@@ -3,7 +3,7 @@
 '''
 
 from sqlalchemy import create_engine
-from data import *
+from analysis import *
 
 class data_base_connection():
     def __init__(self, database_name):
@@ -15,7 +15,7 @@ class data_base_connection():
         self.engine = create_engine(("""mysql://root:daytraders@localhost/{0}
                                                     """).format(database_name))
 
-    def create_table(self, ticker, start_date):
+    def create_update_table(self, ticker, start_date, mov_avgs):
         '''Fn to create new table for a particular DataFrame
         param ticker: is the stock code
         param start_date: date from which data is to be collected, can be None
@@ -24,54 +24,43 @@ class data_base_connection():
             self.engine.execute(("""SELECT 1 FROM {0}
                                                 LIMIT 1""").format(ticker))
         except:
-            if self.new_table(ticker, start_date):
+            if self.new_table(ticker, start_date, mov_avgs):
                 print('New table created')
                 return True
             else:
                 print('Unable to create table')
                 return False
         else:
-            if self.update_table(ticker):
+            if self.update_table(ticker, mov_avgs):
                 print("Table updated")
                 return True
             else:
                 print('Unable to update table')
                 return False
 
-    def download_df(self, ticker, start_date):
-        '''Fn to download dataframe with instance of data_frame class
-        param ticker: is stock code
-        param start_date: is date to download data from to present, can be None
-        return: cleaned stock price dataframe with returns column'''
-        data = data_frame(ticker, start_date, pd.DataFrame())
-        data.download_data()
-        data.clean_data()
-        data.returns()
-        return data.df
-
-    def new_table(self, ticker, start_date):
+    def new_table(self, ticker, start_date, mov_avgs):
         '''Fn called if no table exists to create new, params same as previous
         return: True or False depending on successful operation'''
         try:
-            self.download_df(ticker, start_date).to_sql(ticker, con=self.engine)
+            download_df(ticker, start_date, mov_avgs).to_sql(ticker, con=self.engine)
         except:
             return False
         else:
             return True
 
-    def update_table(self, ticker):
+    def update_table(self, ticker, mov_avgs):
         '''Fn called if sql table exists to update to present date
         param ticker: is stock code
         return: True or False depending on successful operation'''
         try:
-            current = self.read_data(ticker)
+            current = self.read_dataframe(ticker)
             if current.index.max() == date.today():
                 return True
             update = data_frame(ticker, False, pd.concat([current,
-                            self.download_df(ticker, current.index.max() +
-                                                        timedelta(days=1))]))
+                            download_df(ticker, current.index.max() +
+                                                        timedelta(days=1), mov_avgs)]))
             update.returns()
-            self.remove_table()
+            self.remove_table(ticker)
             update.df.to_sql(ticker, con=self.engine)
         except:
             return False
@@ -91,8 +80,25 @@ class data_base_connection():
             print("Table removed")
             return True
 
-    def read_data(self, ticker):
+    def read_dataframe(self, ticker):
         '''Fn to make copy of database table as a pandas DataFrame
         param ticker: stock code
         return: pandas dataframe of market price data'''
         return pd.read_sql_table(ticker, con=self.engine, index_col='Date')
+
+    def current_returns(self, ticker):
+        query = self.engine.execute(("""SELECT Returns FROM {0} S WHERE Date =
+                    (SELECT MAX(Date) FROM {0})""").format(ticker))
+        return query.fetchall()[0][0] - 1
+
+    def create_update_overview_table(self, tickers):
+        self.engine.execute("""CREATE TABLE IF NOT EXISTS 'overview' (
+                                                'name' VARCHAR NOT NULL,
+                                                'buy_value' DECIMAL,
+                                                'current_value' DECIMAL,
+                                                'alpha' DECIMAL,
+                                                'beta' DECIMAL,
+                                                'sharpe_ratio' DECIMAL);""")
+        self.engine.execute("""TRUNCATE TABLE 'overview';""")
+        for i in range(len(tickers)):
+            pass

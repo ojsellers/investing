@@ -11,13 +11,14 @@ from datetime import datetime, timedelta, date
 class data_frame():
     def __init__(self, ticker, start_date, df):
         '''This class represents a dataframe that can be used to scrape up to
-        date market data from yfinance api
+        date market data from yfinance api or perform overall dataframe fns
         param ticker: the code used to represent the stock
         param start_date: the date from which the market data should be gathered
                           can be set to None and will download past 5 years
         param df: can input pre created dataframe to use clean and returns fns
         '''
         self.ticker = ticker.replace("_", ".")
+        self.ticker = ''.join([i for i in self.ticker if not i.isdigit()])
         self.start_date = start_date
         self.df = df
 
@@ -68,4 +69,11 @@ class data_frame():
             del self.df['Returns']
         self.df['Returns'] = (self.df['AdjClose'].pct_change() + 1).cumprod()
         self.df.iat[0, len(self.df.columns) - 1] = 1
+        return self.df
+
+    def moving_averages(self, time_frame=50):
+        '''Fn to create moving averages for the returns column'''
+        if 'MovAvgs' in self.df:
+            del self.df['MovAvgs']
+        self.df['MovAvgs'] = self.df['Returns'].rolling(window=time_frame).mean()
         return self.df

@@ -3,10 +3,12 @@
 @Author = Ollie
 '''
 
-from analysis import *
+from visualisation import *
 
 '''holdings for stocks currently in portfolio with date of first purchase
-and quantity bought on first purchase
+and quantity bought on first purchase not taking cash value into account
+- further purchases are added to holdings as new entry with number following
+ticker that can be combined with original at a later date
 [ticker, date, quantity]'''
 holdings = [['SMT_L', '2019-09-23', 94],
             ['PHGP_L', '2019-09-23', 8],
@@ -15,9 +17,8 @@ holdings = [['SMT_L', '2019-09-23', 94],
             ['ULVR_L', '2020-04-07', 11],
             ['TMPL_L', '2020-04-07', 74],
             ['SSON_L', '2020-04-07', 57],
+            ['CLDN_L2', '2020-04-07', 19],
             ['RCP_L', '2020-04-16', 43]]
-
-further_purchases = ['CLDN.L', '2020-04-07', 19]
 
 prospects = [['GGP_L', None, None],
             ['LWDB_L', None, None],
@@ -30,10 +31,15 @@ holdings_db = data_base_connection('holdings')
 prospects_db = data_base_connection('prospects')
 
 for i in range(len(holdings)):
-    holdings_db.create_table(holdings[i][0], holdings[i][1])
+    holdings_db.create_update_table(holdings[i][0], holdings[i][1], False)
 
 for j in range(len(prospects)):
-    prospects_db.create_table(prospects[j][0], prospects[j][1])
+    prospects_db.create_update_table(prospects[j][0], prospects[j][1], True)
+
+a = covariance(holdings_db.read_dataframe("SMT_L")['Returns'], bench_mark('2019-09-23'))
+
+print(a)
+print(a[0][1])
 
 plot(holdings, 'Returns', holdings_db)
-plot(prospects, 'Returns', prospects_db)
+plot(prospects, 'MovAvgs', prospects_db)
