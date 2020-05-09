@@ -8,10 +8,10 @@ yf.pdr_override()
 import pandas as pd
 from datetime import datetime, timedelta, date
 
-class data_frame():
+class stock_dataframe():
     def __init__(self, ticker, start_date, df):
         '''This class represents a dataframe that can be used to scrape up to
-        date market data from yfinance api or perform overall dataframe fns
+        date market data from yfinance api or perform cleaning and add columns
         param ticker: the code used to represent the stock
         param start_date: the date from which the market data should be gathered
                           can be set to None and will download past 5 years
@@ -72,8 +72,23 @@ class data_frame():
         return self.df
 
     def moving_averages(self, time_frame=50):
-        '''Fn to create moving averages for the returns column'''
-        if 'MovAvgs' in self.df:
-            del self.df['MovAvgs']
-        self.df['MovAvgs'] = self.df['Returns'].rolling(window=time_frame).mean()
+        '''Fn to create a new column in dataframe for moving averages of Returns
+        param time_frame: number of days over which moving average is taken
+        return: updated dataframe'''
+        if 'ReturnsMA' in self.df:
+            del self.df['ReturnsMA']
+        self.df['ReturnsMA'] = self.df['Returns'].rolling(window=
+                                                            time_frame).mean()
+        return self.df
+
+    def new_stock_df(self, mov_avgs):
+        '''Fn to download dataframe with instance of data_frame class
+        param ticker: is stock code
+        param start_date: is date to download data from to present, can be None
+        return: cleaned stock price dataframe with returns column'''
+        self.download_data()
+        self.clean_data()
+        self.returns()
+        if mov_avgs == True:
+            self.moving_averages()
         return self.df

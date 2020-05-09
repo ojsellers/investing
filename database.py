@@ -5,7 +5,7 @@
 from sqlalchemy import create_engine
 from analysis import *
 
-class data_base_connection():
+class database_connection():
     def __init__(self, database_name):
         '''This class represents a connection to the mysql database
         param database_name: the name of database to create or connect to'''
@@ -42,7 +42,8 @@ class data_base_connection():
         '''Fn called if no table exists to create new, params same as previous
         return: True or False depending on successful operation'''
         try:
-            download_df(ticker, start_date, mov_avgs).to_sql(ticker, con=self.engine)
+            new = stock_dataframe(ticker, start_date, pd.DataFrame())
+            new.new_stock_df(mov_avgs).to_sql(ticker, con=self.engine)
         except:
             return False
         else:
@@ -54,12 +55,15 @@ class data_base_connection():
         return: True or False depending on successful operation'''
         try:
             current = self.read_dataframe(ticker)
-            if current.index.max() == date.today():
+            if current.index.max() == np.busday_offset(date.today(), -1,
+                                                            roll='backward'):
                 return True
-            update = data_frame(ticker, False, pd.concat([current,
-                            download_df(ticker, current.index.max() +
-                                                        timedelta(days=1), mov_avgs)]))
+            to_date =stock_dataframe(ticker, current.index.max()+timedelta(days=1),
+                                        pd.DataFrame()).new_stock_df(mov_avgs)
+            update = stock_dataframe(ticker, False, pd.concat([current, to_date]))
             update.returns()
+            if mov_avgs:
+                update.moving_averages()
             self.remove_table(ticker)
             update.df.to_sql(ticker, con=self.engine)
         except:

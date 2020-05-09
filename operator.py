@@ -27,19 +27,16 @@ prospects = [['GGP_L', None, None],
             ['TSCO_L', None, None],
             ['PHAG_L', None, None]]
 
-holdings_db = data_base_connection('holdings')
-prospects_db = data_base_connection('prospects')
+holdings_db = database_connection('holdings')
+prospects_db = database_connection('prospects')
 
 for i in range(len(holdings)):
+    #holdings_db.remove_table(holdings[i][0])
     holdings_db.create_update_table(holdings[i][0], holdings[i][1], False)
 
 for j in range(len(prospects)):
+    #prospects_db.remove_table(prospects[j][0])
     prospects_db.create_update_table(prospects[j][0], prospects[j][1], True)
 
-a = covariance(holdings_db.read_dataframe("SMT_L")['Returns'], bench_mark('2019-09-23'))
-
-print(a)
-print(a[0][1])
-
 plot(holdings, 'Returns', holdings_db)
-plot(prospects, 'MovAvgs', prospects_db)
+plot(prospects, 'ReturnsMA', prospects_db)
