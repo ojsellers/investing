@@ -58,8 +58,8 @@ class database_connection():
             if current.index.max() == np.busday_offset(date.today(), -1,
                                                             roll='backward'):
                 return True
-            to_date =stock_dataframe(ticker, current.index.max()+timedelta(days=1),
-                                        pd.DataFrame()).new_stock_df(mov_avgs)
+            to_date = stock_dataframe(ticker, current.index.max()+timedelta(days
+                                    =1), pd.DataFrame()).new_stock_df(mov_avgs)
             update = stock_dataframe(ticker, False, pd.concat([current, to_date]))
             update.returns()
             if mov_avgs:

@@ -38,5 +38,11 @@ for j in range(len(prospects)):
     #prospects_db.remove_table(prospects[j][0])
     prospects_db.create_update_table(prospects[j][0], prospects[j][1], True)
 
-plot(holdings, 'Returns', holdings_db)
-plot(prospects, 'ReturnsMA', prospects_db)
+a = covariance(holdings_db.read_dataframe("PHGP_L")['Returns'], bench_mark('2019-09-23'))
+
+print(beta(a))
+
+print(risk_free_rate('2019-05-05'))
+
+#plot(holdings, 'Returns', holdings_db)
+#plot(prospects, 'ReturnsMA', prospects_db)

@@ -38,7 +38,9 @@ class stock_dataframe():
         - interpolates missing values
         - converts all prices to pence
         return: cleaned dataframe'''
+        self.df = self.df.asfreq('D')
         self.df[self.df.index.dayofweek < 5]
+
         self.df.interpolate(method='spline', order=3)
         for i in range(len(self.df) - 1):
             for j in range(len(self.df.columns) - 1):
