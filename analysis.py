@@ -3,24 +3,65 @@
 '''
 
 from data import *
-import matplotlib.pyplot as plt
 import numpy as np
 
-def bench_mark(start_date, baseline="^FTSE"):
-    df = stock_dataframe(baseline, start_date, pd.DataFrame())
-    return  df.new_stock_df(False)['Returns']
+'''
+This file contains functions that can be used to analyse stock returns
+against a baseline stock (FTSE 100 tracker) and risk free stock (UK Gilds).
 
-def risk_free_rate(start_date, baseline="GLTS.L"):
-    return  bench_mark(start_date, baseline).tail(1) - 1
+This file contains functions to caluclate 3 different get_metrics:
+- beta: volatility of stock compared to base through covariance matrix of stock
+and baseline returns
+- alpha: percentage with which stock outperforms market using beta value, risk
+free rate of returns, and baseline stock returns
+- Sharpes ratio: a single metric accounting for risk and reward calculated by
+taking away risk free return from stock return and dividing by standard
+deviation of the stock return
+'''
 
-def covariance(df, baseline):
-    return np.cov(df, baseline)
+def update_returns(start_date, df):
+    '''This is used to update the returns column of a dataframe by resampling
+    from a specified date using the stock_dataframe class
+
+    :param start_date: is the date from which resampling should be done
+    :param df: dataframe on which recalculating should be performed
+    :return: resampled dataframe'''
+    return stock_dataframe("", None, df[df.index >= start_date]).returns()
+
+def risk_free_rate(start_date, risk_free_df):
+    return  (update_returns(start_date, risk_free_df)['Returns']).tail(1) - 1
+
+def covariance(df, base):
+    return np.cov(df['Returns'], base)
 
 def beta(cov_matrix):
-    return cov_matrix[0][1] / cov_matrix[1][1]
+    if cov_matrix[1][1] == 0:
+        return np.nan
+    return (cov_matrix[0][1] / cov_matrix[1][1])
 
-def alpha(df, risk_free, beta_value):
-    return (df.tail(1)-1) - risk_free - beta_value * (benchmark_return - risk_free)
+def alpha(df, beta_value, rf, base):
+    a = (df['Returns'].tail(1) - 1) - rf - beta_value * ((base.tail(1)-1) - rf)
+    return a.iloc[0] * 100
 
-def sharpes():
-    pass
+def sharpes(df, rf):
+    if np.std(df['Returns']) == 0:
+        return np.nan
+    return (((df['Returns'].tail(1) - 1) - rf) / np.std(df['Returns'])).iloc[0]
+
+def get_metrics(df, start_date, base_df, risk_free_df):
+    if not start_date:
+        start_date = df.head(1).index[0]
+    rf = risk_free_rate(start_date, risk_free_df)
+    base = update_returns(start_date, base_df)['Returns']
+    beta_value = beta(covariance(df, base))
+    return beta_value, alpha(df, beta_value, rf, base), sharpes(df, rf)
+
+def get_investment_values(df, buy_value):
+    '''This returns buy and current value of stock if buy value is specified,
+    if not buy_value = 1 and current is relative change '''
+    if buy_value != None:
+        current_value = ((df['Returns']).iloc[-1]) * float(buy_value)
+    else:
+        buy_value = (df['Returns']).iloc[0]
+        current_value = (df['Returns']).iloc[-1]
+    return buy_value, current_value
