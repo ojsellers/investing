@@ -21,14 +21,14 @@ deviation of the stock return
 
 def update_returns(start_date, df):
     '''This is used to update the returns column of a dataframe by resampling
-    from a specified date using the stock_dataframe class
+    from a specified date using the stock_dataframe class. This is mainly used
+    so ISF_L and GLTS_L databases can be resized for comparison with stocks
+    having different time frames
 
     :param start_date: is the date from which resampling should be done
     :param df: dataframe on which recalculating should be performed
     :return: resampled dataframe'''
-    updated = stock_dataframe("", None, df[df.index >= start_date])
-    updated.returns()
-    return updated.moving_averages()
+    return stock_dataframe("", None,df[df.index>=start_date]).pre_process(False)
 
 def risk_free_rate(start_date, risk_free_df):
     return  (update_returns(start_date, risk_free_df)['Returns']).tail(1) - 1

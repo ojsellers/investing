@@ -80,14 +80,16 @@ class stock_dataframe():
         self.df['ReturnsMA'] = self.df['Returns'].rolling(window=t_frame).mean()
         return self.df
 
-    def pre_process(self):
-        self.clean_data()
+    def pre_process(self, clean):
+        if clean:
+            self.clean_data()
         self.returns()
-        return self.moving_averages()
+        self.moving_averages()
+        return self.df
 
     def new_stock_df(self):
         self.download_data()
-        return self.pre_process()
+        return self.pre_process(True)
 
     def update_stock_df(self):
         '''Updates stock dataframe to include up to date prices'''
@@ -98,7 +100,7 @@ class stock_dataframe():
             del old_df['ReturnsMA']
         self.download_data()
         self.df = pd.concat([old_df, self.df])
-        return self.pre_process()
+        return self.pre_process(True)
 
 
 def test_data(ticker='SMT_L'):
