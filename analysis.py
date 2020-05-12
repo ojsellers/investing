@@ -9,7 +9,7 @@ import numpy as np
 This file contains functions that can be used to analyse stock returns
 against a baseline stock (FTSE 100 tracker) and risk free stock (UK Gilds).
 
-This file contains functions to caluclate 3 different get_metrics:
+Functions calculate 3 different metrics:
 - beta: volatility of stock compared to base through covariance matrix of stock
 and baseline returns
 - alpha: percentage with which stock outperforms market using beta value, risk
@@ -28,7 +28,7 @@ def update_returns(start_date, df):
     :param start_date: is the date from which resampling should be done
     :param df: dataframe on which recalculating should be performed
     :return: resampled dataframe'''
-    return stock_dataframe("", None,df[df.index>=start_date]).pre_process(False)
+    return stock_dataframe("",None,df[df.index>=start_date]).pre_process(False)
 
 def risk_free_rate(start_date, risk_free_df):
     return  (update_returns(start_date, risk_free_df)['Returns']).tail(1) - 1
