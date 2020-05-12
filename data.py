@@ -80,21 +80,20 @@ class stock_dataframe():
         self.df['ReturnsMA'] = self.df['Returns'].rolling(window=t_frame).mean()
         return self.df
 
-    def new_stock_df(self, mov_avgs):
+    def new_stock_df(self):
         self.download_data()
         self.clean_data()
         self.returns()
-        if mov_avgs:
-            self.moving_averages()
+        self.moving_averages()
         return self.df
 
-def test_data(ticker='ISF_L'):
+def test_data(ticker='SMT_L'):
     '''Fn to test stock_dataframe and the yfinance API is working
     - len(df) assertion is given range to account for bank holidays at the ends
     of the time periods'''
     print('testing data...')
     start_date = str(date.today() - timedelta(days=35))
-    df = stock_dataframe(ticker, start_date, pd.DataFrame()).new_stock_df(True)
+    df = stock_dataframe(ticker, start_date, pd.DataFrame()).new_stock_df()
     assert(24<=len(df)<=26)
     assert(len(df.columns)) == 8
     print('...data test passed')

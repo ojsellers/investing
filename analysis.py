@@ -26,7 +26,9 @@ def update_returns(start_date, df):
     :param start_date: is the date from which resampling should be done
     :param df: dataframe on which recalculating should be performed
     :return: resampled dataframe'''
-    return stock_dataframe("", None, df[df.index >= start_date]).returns()
+    updated = stock_dataframe("", None, df[df.index >= start_date])
+    updated.returns()
+    return updated.moving_averages()
 
 def risk_free_rate(start_date, risk_free_df):
     return  (update_returns(start_date, risk_free_df)['Returns']).tail(1) - 1
@@ -58,7 +60,7 @@ def get_metrics(df, start_date, base_df, risk_free_df):
 
 def get_investment_values(df, buy_value):
     '''This returns buy and current value of stock if buy value is specified,
-    if not buy_value = 1 and current is relative change '''
+    if not buy_value is set to 1 and current is relative change '''
     if buy_value != None:
         current_value = ((df['Returns']).iloc[-1]) * float(buy_value)
     else:
