@@ -80,12 +80,26 @@ class stock_dataframe():
         self.df['ReturnsMA'] = self.df['Returns'].rolling(window=t_frame).mean()
         return self.df
 
-    def new_stock_df(self):
-        self.download_data()
+    def pre_process(self):
         self.clean_data()
         self.returns()
-        self.moving_averages()
-        return self.df
+        return self.moving_averages()
+
+    def new_stock_df(self):
+        self.download_data()
+        return self.pre_process()
+
+    def update_stock_df(self):
+        '''Updates stock dataframe to include up to date prices'''
+        old_df = self.df.copy()
+        if 'Returns' in old_df:
+            del old_df['Returns']
+        if 'ReturnsMA' in old_df:
+            del old_df['ReturnsMA']
+        self.download_data()
+        self.df = pd.concat([old_df, self.df])
+        return self.pre_process()
+
 
 def test_data(ticker='SMT_L'):
     '''Fn to test stock_dataframe and the yfinance API is working

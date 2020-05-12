@@ -36,7 +36,7 @@ prospects = np.array([['GGP_L', None, None],
                     ['ISF_L', None, None],      #base_df
                     ['GLTS_L', None, None]])    #risk_free_df
 
-#test_program()
+test_program()
 
 holdings_db = database_connection('holdings')
 prospects_db = database_connection('prospects')

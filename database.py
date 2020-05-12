@@ -52,12 +52,10 @@ class database_connection():
             if current.index.max() == np.busday_offset(date.today() + timedelta(
                                                 days=1), -1, roll='backward'):
                 return True
-            to_date = stock_dataframe(ticker, current.index.max()+timedelta(days
-                                    =1), pd.DataFrame()).new_stock_df()
-            updt = stock_dataframe(ticker, None, pd.concat([current, to_date]))
-            updt.returns()
-            updt.moving_averages()
-            updt.df.to_sql(ticker, con=self.engine, if_exists='replace')
+            update = stock_dataframe(ticker,
+                                current.index.max()+timedelta(days=1), current)
+            update.update_stock_df()
+            update.df.to_sql(ticker, con=self.engine, if_exists='replace')
         except:
             return False
         else:

@@ -43,11 +43,11 @@ def bar(ticker, columns, database, scale, bar_width):
 def metrics_table(ticker, database):
     '''Generates a nice matplotlib table showing overview table'''
     for_plot = database.read_dataframe(ticker, 'ticker').reset_index()
-    print(for_plot.head())
     table_text = []
     for_plot = for_plot.round(2)
     for row in range(len(for_plot)):
         table_text.append(for_plot.iloc[row])
-    table = plt.table(cellText=table_text, colLabels=for_plot.columns, loc='center')
+    table = plt.table(cellText=table_text, colLabels=for_plot.columns,
+                                                                loc='center')
     table.set_fontsize(45)
     plt.show()
